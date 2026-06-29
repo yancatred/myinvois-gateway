@@ -94,9 +94,16 @@ export async function processCertificate(certificateBase64: string): Promise<{
     // Use Node.js crypto.X509Certificate for parsing certificate details
     const nodeCert = new NodeX509Certificate(certificateDerBuffer);
 
-    // issuer (DN string) and serialNumber (hex string)
-    const issuerName = nodeCert.issuer; // e.g., 'CN=Test CA,O=Org,C=US'
-    const serialNumber = nodeCert.serialNumber; // Hexadecimal string
+    // Convert hex serial to decimal (LHDN expects decimal in X509SerialNumber)
+    const serialNumber = BigInt('0x' + nodeCert.serialNumber).toString();
+
+    // Convert issuer from multi-line to LHDN expected format (reverse order, "CN=..., OU=..., O=..., C=...")
+    const issuerName = nodeCert.issuer
+      .split('\n')
+      .map(s => s.trim())
+      .filter(s => s.length > 0)
+      .reverse()
+      .join(', ');
 
     // Calculate SHA-256 digest of the raw DER certificate for "CertDigest"
     // crypto.subtle.digest operates on ArrayBuffer.

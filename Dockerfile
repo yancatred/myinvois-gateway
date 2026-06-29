@@ -5,41 +5,34 @@ ARG BUILDKIT_SBOM_SCAN_CONTEXT=true
 WORKDIR /app
 
 # Copy package.json and tsconfig.json.
-# If bun.lockb were present, we'd copy it too.
 COPY package.json tsconfig.json ./
 
 # Install dependencies
-# Bun will generate a bun.lockb if it doesn't exist
 RUN bun install
+
+# Patch myinvois-client library: rename XadesQualifyingProperties -> QualifyingProperties
+# (library bug: LHDN expects QualifyingProperties per the official SDK sample)
+RUN sed -i 's/XadesQualifyingProperties/QualifyingProperties/g' node_modules/myinvois-client/dist/index.js
 
 # Copy the rest of the application source code
 COPY src ./src
-# If you have other assets or config files needed for the build, copy them too.
-# For example:
-# COPY public ./public
 
-# Run the build script to compile the application
-# This will create an executable named 'myinvois-gateway' in the current WORKDIR (/app/bin)
-RUN bun run build
+# Build a standalone Linux binary
+RUN bun run build:linux
 
 # Stage 2: Create the final production image
-FROM oven/bun:1-slim
+FROM debian:bookworm-slim
 
 WORKDIR /app
 
 # Create a non-root user
-RUN adduser --disabled-password --gecos "" appuser \
+RUN useradd -r -s /bin/false appuser \
     && chown -R appuser /app
 
 # Copy the compiled executable from the builder stage
 COPY --from=builder /app/bin/myinvois-gateway .
 
-# Copy the static assets from the builder stage
-# The source /app/src/static is where they are in the builder.
-# The destination ./src/static creates /app/src/static in the final image.
-COPY --from=builder /app/src/static ./src/static
-
-# Copy license, intent, and the Docker-specific README (renaming it to README.md)
+# Copy license and intent files
 COPY LICENSE.md INTENT.md ./
 COPY README.docker.md README.md
 
@@ -48,9 +41,6 @@ USER appuser
 
 # Expose the port the application listens on
 EXPOSE 3000
-
-# Environment variables like CLIENT_ID, CLIENT_SECRET, REDIS_URL
-# will need to be provided at runtime (e.g., docker run -e VAR=value)
 
 # Command to run the application
 CMD ["./myinvois-gateway"]

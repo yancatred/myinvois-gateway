@@ -219,6 +219,9 @@ export async function submitInvoices(
     let documents: DocumentSubmissionItem[] = [];
 
     for await (const doc of _documents) {
+      if (signature) {
+        (doc as CreateInvoiceDocumentParams).signature = signature;
+      }
       let _doc = await createDocumentSubmissionItemFromInvoice(
         doc as CreateInvoiceDocumentParams,
         signature ? "1.1" : "1.0"
