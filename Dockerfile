@@ -12,7 +12,7 @@ RUN bun install
 
 # Patch myinvois-client library: rename XadesQualifyingProperties -> QualifyingProperties
 # (library bug: LHDN expects QualifyingProperties per the official SDK sample)
-RUN sed -i 's/XadesQualifyingProperties/QualifyingProperties/g' node_modules/myinvois-client/dist/index.js
+RUN sed -i 's/XadesQualifyingProperties/QualifyingProperties/g' node_modules/myinvois-client/dist/index.js node_modules/myinvois-client/dist/index.mjs
 
 # Copy the rest of the application source code
 COPY src ./src
