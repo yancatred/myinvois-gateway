@@ -10,9 +10,14 @@ COPY package.json tsconfig.json ./
 # Install dependencies
 RUN bun install
 
-# Patch myinvois-client library: rename XadesQualifyingProperties -> QualifyingProperties
-# (library bug: LHDN expects QualifyingProperties per the official SDK sample)
-RUN sed -i 's/XadesQualifyingProperties/QualifyingProperties/g' node_modules/myinvois-client/dist/index.js node_modules/myinvois-client/dist/index.mjs
+# Patch myinvois-client library to match the official LHDN signature template.
+# Fixes the PropsDigest inconsistency (stuck-at-Submitted bug) plus Target/Id/SignatureValue
+# fields, and subsumes the old XadesQualifyingProperties -> QualifyingProperties rename.
+# The script asserts every anchor + guard and exits 1 on any mismatch, so the build fails
+# loudly if the library version changes. Must run after `bun install`, before the compile.
+# See docs/LHDN-SIGNATURE-SPEC-REFERENCE.md and docs/signature-generation-guide.md.
+COPY scripts ./scripts
+RUN bun scripts/patch-myinvois.mjs
 
 # Copy the rest of the application source code
 COPY src ./src
