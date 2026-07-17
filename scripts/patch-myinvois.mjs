@@ -63,6 +63,26 @@ const EDITS = [
     replacement: 'Target: "signature",',
     count: 1,
   },
+  {
+    // D7 (DS322) — DocDigest must be taken over the document with UBLExtensions and
+    // Signature ABSENT, not merely emptied. The library builds its temp signing object
+    // with a literal `UBLExtensions: []`, so `"UBLExtensions":[]` lands in the hashed
+    // bytes while LHDN recomputes the digest with the key removed outright — the two
+    // strings differ and every signed submission fails Step08 with DS322.
+    //
+    // prepareDocumentForHashing() cannot save us here: it deletes only TOP-LEVEL keys of
+    // { _D, _A, _B, Invoice: [...] }, and UBLExtensions lives one level down in Invoice[0].
+    //
+    // Dropping the line leaves a trailing comma on the preceding property (valid JS) and
+    // makes the temp object key-for-key identical to the content object that is submitted,
+    // which is exactly what LHDN hashes. Verified against LHDN's official signed sample:
+    // only "delete both keys outright" reproduces the sample's embedded DigestValue.
+    // 8 occurrences = the 8 document types (invoice/credit/debit/refund x normal/self-billed).
+    anchor: "        UBLExtensions: []\n      };\n      const documentToSign = {",
+    replacement: "      };\n      const documentToSign = {",
+    count: 8,
+    global: true,
+  },
 ];
 
 // Guard assertions run per file after all edits.
@@ -82,6 +102,7 @@ const MUST_NOT_CONTAIN = [
   "Id: signatureValueId,",
   "Target: `#${signatureId}`",
   "XadesQualifyingProperties",
+  "UBLExtensions: []",
 ];
 
 function occurrences(haystack, needle) {
@@ -127,7 +148,7 @@ for (const file of FILES) {
   if (failed) continue;
 
   writeFileSync(file, content, "utf8");
-  console.log(`[patch] OK: ${file} patched (6 edits applied, guards passed)`);
+  console.log(`[patch] OK: ${file} patched (${EDITS.length} edits applied, guards passed)`);
 }
 
 if (failed) {
