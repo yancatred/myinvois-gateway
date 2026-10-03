@@ -24,6 +24,7 @@ Use this gateway to easily submit invoices, credit notes, or debit notes from an
 - **Automated Hashing & Encoding:** Handles document hash calculation and Base64 encoding.
 - **Official API Formatting:** Prepares the payload for the official MyInvois API.
 - **Document Signing:** Manages the document signing process with flexible configuration.
+- **Signed Document Retrieval:** `GET /documents/:id/raw` returns the full signed document as stored by MyInvois (the `document` field is a JSON string including the signature block), while `GET /documents/:id` returns metadata only.
 - **Optional Redis Caching:** Improves performance and reliability by caching responses.
 - **Developer-Friendly API Docs:** Interactive API documentation available via Swagger UI.
 
