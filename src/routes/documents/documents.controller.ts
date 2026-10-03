@@ -6,6 +6,7 @@ import {
   rejectDocument,
   searchDocuments,
   getDocumentDetails,
+  getDocumentRaw,
   submitCreditNotes,
   submitDebitNotes,
   submitRefundNotes,
@@ -116,6 +117,25 @@ export const documentsController = (app: Elysia) => {
           params: GetDocumentDetailsRequestParamsSchema,
           query: GetDocumentDetailsRequestQuerySchema,
           // No response schema specified by user
+        }
+      )
+      .get(
+        "/:id/raw",
+        async ({ params, query }) => {
+          return await getDocumentRaw(params, query);
+        },
+        {
+          detail: {
+            summary: "Get Raw Document",
+            description: `Retrieves the full document (including the digital signature
+            block) as stored by MyInvois. The "document" field in the response is the
+            signed document as a JSON string. Only available for documents that have
+            been validated. The document ID (UUID) is required as a path parameter.
+            An optional taxpayerTIN can be provided in the query if the caller
+            is an ERP system acting on behalf of a taxpayer.`,
+          },
+          params: GetDocumentDetailsRequestParamsSchema,
+          query: GetDocumentDetailsRequestQuerySchema,
         }
       )
       .put(

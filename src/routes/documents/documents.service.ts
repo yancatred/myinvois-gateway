@@ -105,6 +105,36 @@ export async function getDocumentDetails(
   }
 }
 
+export async function getDocumentRaw(
+  params: GetDocumentDetailsRequestParams,
+  query: GetDocumentDetailsRequestQuery
+) {
+  const client = new MyInvoisClient(
+    CONFIG.clientId,
+    CONFIG.clientSecret,
+    CONFIG.env,
+    redisInstance
+  );
+
+  const documentId = params.id;
+  const taxpayerTIN = query.taxpayerTIN;
+
+  try {
+    // Only "JSON" is safe: the client always parses the body with .json().
+    const rawDocument = await client.documents.getDocumentByUuid(
+      documentId,
+      "JSON",
+      taxpayerTIN
+    );
+    return rawDocument;
+  } catch (error) {
+    const action = taxpayerTIN
+      ? `fetching raw document for ID ${documentId} for TIN ${taxpayerTIN}`
+      : `fetching raw document for ID ${documentId} as taxpayer`;
+    throw new MyInvoisError(`Failed during ${action}`, error);
+  }
+}
+
 export async function searchDocuments(query: SearchDocumentsRequestQuery) {
   const client = new MyInvoisClient(
     CONFIG.clientId,
