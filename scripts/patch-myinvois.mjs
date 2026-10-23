@@ -83,6 +83,16 @@ const EDITS = [
     count: 8,
     global: true,
   },
+  {
+    // D8 (DS320 bila milisaat berakhir 0) — toISOString() beri "...08.820Z". LHDN kira
+    // semula PropsDigest dengan "...08.82Z" (sifar di hujung dibuang), jadi digest tak
+    // sepadan dan Step08 gagal DS320. Bukti production 2026-10-23: EXP-00016 (.820Z)
+    // Invalid, manakala 0 daripada 190 dokumen Valid ada milisaat berakhir 0.
+    // Contoh rasmi LHDN guna format tanpa milisaat ("2024-07-23T15:14:54Z"), jadi buang terus.
+    anchor: "SigningTime: [{ _: signingTime.toISOString() }]",
+    replacement: 'SigningTime: [{ _: signingTime.toISOString().replace(/\\.\\d{3}Z$/, "Z") }]',
+    count: 1,
+  },
 ];
 
 // Guard assertions run per file after all edits.
@@ -93,6 +103,7 @@ const MUST_CONTAIN = [
   "        _: signatureValueBase64",
   'Target: "signature",',
   "QualifyingProperties: [",
+  'signingTime.toISOString().replace(/\\.\\d{3}Z$/, "Z")',
 ];
 
 const MUST_NOT_CONTAIN = [
